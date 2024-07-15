@@ -203,7 +203,7 @@ pub async fn verify_proof(
     };
 
     //info!("payload: {:#?}", payload);
-    let (signature, nullifier) = verify(payload).await.unwrap();
+    let (signature, nullifier, claim_key) = verify(payload).await.unwrap();
 
     // Return a JSON with field success = "OK" in the response to the client
     (
@@ -212,6 +212,7 @@ pub async fn verify_proof(
             "success": "OK",
             "signature": signature.to_string(),
             "nullifier": nullifier,
+            "claim_key": claim_key,
         })),
     )
         .into_response()
@@ -288,7 +289,7 @@ pub fn parse_proofs(
 /// or an error if the verification fails.
 ///
 
-pub async fn verify(request: VerifyProofRequest) -> Result<(String, Vec<u8>), NotaryServerError> {
+pub async fn verify(request: VerifyProofRequest) -> Result<(String, Vec<u8>, String), NotaryServerError> {
     let (
         (auth_header, auth_server_name, auth_substrings),
         (attr_header, attr_server_name, attr_substrings),
@@ -362,7 +363,7 @@ pub async fn verify(request: VerifyProofRequest) -> Result<(String, Vec<u8>), No
         )
         .await;
         return match res {
-            Ok((signature, nullifier)) => Ok((signature, nullifier)),
+            Ok((signature, nullifier, claim_key)) => Ok((signature, nullifier, claim_key)),
             Err(e) => Err(NotaryServerError::BadProverRequest(e.to_string())),
         };
     } else {
